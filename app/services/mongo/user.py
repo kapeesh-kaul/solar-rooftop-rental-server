@@ -3,21 +3,49 @@ from app.utils.db import get_db
 from logging import getLogger
 from bson import ObjectId
 from app.schemas.user_schema import ModerationStatus
+from pydantic import BaseModel
+from datetime import datetime
+from app.core.config import settings
 
 logger = getLogger(__name__)
 
-async def insert_user(user: UserSchema):
+class ValidatePayload(BaseModel):
+    user_id: str
+    name: str
+    address: str
+    satellite_image_url: str
+    area_square_feet: int
+    latitude: float
+    longitude: float
+
+class ProcessedImageSchema(BaseModel):
+    user_id: str
+    original_url: str
+    processed_url: str
+    highlighted_percentage: float
+    timestamp: datetime = datetime.now()
+
+async def insert_or_update_user(user: UserSchema):
     db = await get_db()
     user_dict = user.model_dump()  # Ensure Pydantic v2, else use .dict()
     try:
-        result = await db["users"].insert_one(user_dict)
-        if not result.acknowledged:
-            logger.error("Failed to insert user into the database.")
-            raise Exception("User insertion was not acknowledged")
-        logger.info(f"User inserted with ID: {result.inserted_id}")
-        return str(result.inserted_id)
+        result = await db["users"].update_one(
+            {"email": user.email},
+            {"$set": user_dict},
+            upsert=True
+        )
+        if result.upserted_id:
+            logger.info(f"User inserted with ID: {result.upserted_id}")
+            return str(result.upserted_id)
+        elif result.modified_count > 0:
+            logger.info(f"User with email {user.email} updated.")
+            updated_user = await db["users"].find_one({"email": user.email})
+            return str(updated_user["_id"])
+        else:
+            logger.error("Failed to insert or update user in the database.")
+            raise Exception("User insertion or update was not acknowledged")
     except Exception as e:
-        logger.exception(f"Insertion error: {e}")
+        logger.exception(f"Insertion or update error: {e}")
         raise
 
 async def get_user_by_id(user_id: str):
@@ -34,14 +62,25 @@ async def get_user_by_id(user_id: str):
         logger.exception(f"Fetching user error: {e}")
         raise
 
-async def verify_user(user_id: str):
+async def verify_user(payload: ValidatePayload):
     db = await get_db()
     try:
-        result = await db["users"].update_one({"_id": ObjectId(user_id)}, {"$set": {"verified": True}})
+        result = await db["users"].update_one(
+            {"_id": ObjectId(payload.user_id)}, {
+                "$set": {
+                    "verified": True,
+                    "name": payload.name,
+                    "address": payload.address,
+                    "satellite_image_url": payload.satellite_image_url,
+                    "area_square_feet": payload.area_square_feet,
+                    "coordinates": [payload.latitude, payload.longitude],
+                }
+            }
+        )
         if result.modified_count == 0:
-            logger.error(f"No document updated for user ID {user_id}.")
+            logger.error(f"No document updated for user ID {payload.user_id}.")
             return False
-        logger.info(f"User with ID {user_id} has been verified.")
+        logger.info(f"User with ID {payload.user_id} has been verified.")
         return True
     except Exception as e:
         logger.exception(f"Verification update error: {e}")

@@ -79,27 +79,16 @@
    git clone https://github.com/your-repo/solargreen.git
    cd solargreen
    ```
-2. **Create virtual environment**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
+2. **Create conda environment**:
+    ```bash
+    conda env create -f requirements.yaml
+    conda activate solar-rooftop
+    ```
    ```
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. **Configure environment variables**:
-   ```bash
-   cp .env.example .env
-   # Edit .env with appropriate values
-   ```
-5. **Run the server**:
+
+3. **Run the server**:
    ```bash
    uvicorn main:app --reload
-   ```
-6. **Docker (Optional)**:
-   ```bash
-   docker-compose up --build
    ```
 
 ## 🗓️ API Endpoints
@@ -122,5 +111,6 @@
 This project is licensed under the [MIT License](LICENSE).
 
 ## 👤 Contributors
-- **[Your Name]** - Developer & Architect
+- **[kapeeshkaul]**
+- **[satilog]**
 

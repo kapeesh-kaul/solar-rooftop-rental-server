@@ -11,17 +11,21 @@ class Prompts:
             - "name": the full name of the person.
             - "email": a valid email address.
             - "address": the complete address of the person, including street, city, state/province, postal code, and country if provided. It should be in the format "Street, City, State, Postal Code, Country".
+            - "rate": the electricity rate in currency per kWh.
+            
 
-            If a field is missing or cannot be determined from the input, return null for that field.
+            Ensure that the extracted information is accurate and matches the schema provided.
 
             Example Schema:
             {
             "name": "John Doe",
             "email": "john.doe@example.com",
             "address": "1234 Elm Street, Springfield, IL, 62704, USA"
+            "rate": 0.12,
             }
 
             Output the result in JSON format only.
+            Make sure that there are no Illegal trailing comma before end of object.
             Do not include any additional text or explanation.
 
             Input Text:

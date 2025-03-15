@@ -11,7 +11,7 @@ class SAMSegmentationService:
         self.model = sam_model_registry["vit_h"](checkpoint=model_path).to(self.device)
         self.mask_generator = SamAutomaticMaskGenerator(self.model)
 
-    def segment_largest_region(self, image_path):
+    def segment_largest_region(self, image_path: str):
         """Segments the largest region in the image using SAM2."""
         # Load image
         image = cv2.imread(image_path)
@@ -28,7 +28,7 @@ class SAMSegmentationService:
         # Calculate the percentage of the highlighted area
         highlighted_area = np.sum(largest_mask["segmentation"])
         total_area = image.shape[0] * image.shape[1]
-        highlighted_percentage = (highlighted_area / total_area) * 100
+        highlighted_percentage = (highlighted_area / total_area)
 
         # Overlay mask on the image
         highlighted_image = self.highlight_mask(image, largest_mask["segmentation"])

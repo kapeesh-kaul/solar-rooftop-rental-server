@@ -35,4 +35,7 @@ async def get_bill_details(pdf_url: str):
     # if not insert_id:
     #     raise HTTPException(status_code=500, detail="Failed to insert user details into the database.")
     insert_id = await insert_user(user_details)
-    return {"message": "User details inserted successfully.", "insert_id": str(insert_id)}
+    return {
+        "insert_id": insert_id,
+        "user_details": user_details.model_dump()
+    }

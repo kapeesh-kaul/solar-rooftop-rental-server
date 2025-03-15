@@ -12,13 +12,23 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup actions
-    connect(host=settings.MONGO_URI)
+    # Check if connection is successful
+    try:
+        connect(host=settings.MONGO_URI)
+    except Exception as e:
+        logger.error(f"Failed to connect to the database: {e}")
+        raise
     logger.info("Database Connected.")
     yield
     # Shutdown actions
     disconnect()
     logger.info("Database Disconnected.")
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="solar-rooftop-rental-server",
+    description="API for solar rooftop rental.",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
 app.include_router(bill_router)

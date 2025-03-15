@@ -1,46 +1,38 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, HTTPException
 from app.schemas.user_schema import UserSchema
 from app.services.ollama.handler import LLMHandler
 from app.services.ollama.prompts import prompts
 from app.core.config import settings
-import PyPDF2
+from app.services.mongo.user import insert_user
+from app.utils import extract_text_from_pdf_url_ocr
+
 
 router = APIRouter(prefix="/bill", tags=["bill"])
 
-def extract_text_from_pdf(file: UploadFile) -> str:
-    """"
-    "Extract text from a PDF file."
+@router.post("/upload-url")
+async def get_bill_details(pdf_url: str):
     """
-    pdf_reader = PyPDF2.PdfReader(file.file)
-    text = ""
-    for page_num in range(len(pdf_reader.pages)):
-        page = pdf_reader.pages[page_num]
-        text += page.extract_text()
-    return text
+    Fetch a PDF bill from a URL, extract text using OCR, and obtain user details via LLM.
+    """
+    if not pdf_url.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Invalid URL. Only URLs pointing to PDF files are allowed.")
 
-@router.post("/upload")
-async def upload_bill(file: UploadFile = File(...)):
-    """
-    Upload a PDF bill and extract user details.
-    This endpoint accepts a PDF file, extracts text from it, and uses an LLM to extract user details from the text.
-    The extracted details are returned in JSON format.    
-    """
-    if not file.filename.endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="Invalid file type. Only PDF files are allowed.")
-    
-    pdf_text = extract_text_from_pdf(file)
+    pdf_text = extract_text_from_pdf_url_ocr(pdf_url)
 
     handler = LLMHandler(model=settings.OLLAMA_MODEL)
-    
+
     user_details = handler.run_prompt(
-        prompts.extract_details, 
+        prompts.extract_details,
         pdf_text
     )
 
-    # Validate the extracted user details against the UserSchema
     try:
         user_details = UserSchema(**user_details)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid user details: {e}")
-    
-    return user_details
+
+    # insert_id = await insert_user(user_details)
+    # if not insert_id:
+    #     raise HTTPException(status_code=500, detail="Failed to insert user details into the database.")
+    insert_id = await insert_user(user_details)
+    return {"message": "User details inserted successfully.", "insert_id": str(insert_id)}

@@ -2,6 +2,7 @@ from app.schemas.user_schema import UserSchema
 from app.utils.db import get_db
 from logging import getLogger
 from bson import ObjectId
+from app.schemas.user_schema import ModerationStatus
 
 logger = getLogger(__name__)
 
@@ -46,10 +47,17 @@ async def verify_user(user_id: str):
         logger.exception(f"Verification update error: {e}")
         raise
 
-async def moderate_user(user_id: str):
+async def moderate_user(user_id: str, accepted: bool = True) -> bool:
     db = await get_db()
     try:
-        result = await db["users"].update_one({"_id": ObjectId(user_id)}, {"$set": {"moderated": True}})
+        if not accepted:
+            moderation_status = ModerationStatus.rejected
+        else:
+            moderation_status = ModerationStatus.accepted
+        result = await db["users"].update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"moderation_status": moderation_status}}
+        )      
         if result.modified_count == 0:
             logger.error(f"No document updated for user ID {user_id}.")
             return False
@@ -57,4 +65,34 @@ async def moderate_user(user_id: str):
         return True
     except Exception as e:
         logger.exception(f"Moderation update error: {e}")
+        raise
+
+async def get_all_users():
+    db = await get_db()
+    try:
+        users = await db["users"].find().to_list(length=None)
+        if not users:
+            logger.warning("No users found in the database.")
+            return []
+        for user in users:
+            user["_id"] = str(user["_id"])  # convert ObjectId to str for schema compatibility
+        logger.info(f"Total users fetched: {len(users)}")
+        return [{"_id": user["_id"], **UserSchema(**user).model_dump()} for user in users]
+    except Exception as e:
+        logger.exception(f"Fetching all users error: {e}")
+        raise
+
+async def get_by_moderation_status(moderation_status: ModerationStatus):
+    db = await get_db()
+    try:
+        users = await db["users"].find({"moderation_status": moderation_status.value}).to_list(length=None)
+        if not users:
+            logger.warning(f"No users found with moderation status {moderation_status}.")
+            return []
+        for user in users:
+            user["_id"] = str(user["_id"])  # convert ObjectId to str for schema compatibility
+        logger.info(f"Total users with moderation status {moderation_status}: {len(users)}")
+        return [{"_id": user["_id"], **UserSchema(**user).model_dump()} for user in users]
+    except Exception as e:
+        logger.exception(f"Fetching users by moderation status error: {e}")
         raise

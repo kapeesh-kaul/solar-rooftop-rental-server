@@ -3,6 +3,9 @@ from contextlib import asynccontextmanager
 from mongoengine import connect, disconnect
 from app.core.config import settings
 from app.api.endpoints.bill_upload import router as bill_router
+from app.api.endpoints.user.validate import router as user_router
+from app.api.endpoints.user.get import router as user_get_router
+from app.api.endpoints.moderate_user import router as moderate_user_router
 import logging
 
 # Configure logging
@@ -32,3 +35,6 @@ app = FastAPI(
 )
 
 app.include_router(bill_router)
+app.include_router(user_router)
+app.include_router(user_get_router)
+app.include_router(moderate_user_router)

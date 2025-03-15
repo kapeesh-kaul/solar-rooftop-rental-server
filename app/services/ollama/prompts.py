@@ -9,7 +9,6 @@ class Prompts:
 
             Extract the following fields:
             - "name": the full name of the person.
-            - "email": a valid email address.
             - "address": the complete address of the person, including street, city, state/province, postal code, and country if provided. It should be in the format "Street, City, State, Postal Code, Country".
             - "rate": the electricity rate in currency per kWh.
             
@@ -19,7 +18,6 @@ class Prompts:
             Example Schema:
             {
             "name": "John Doe",
-            "email": "john.doe@example.com",
             "address": "1234 Elm Street, Springfield, IL, 62704, USA"
             "rate": 0.12,
             }

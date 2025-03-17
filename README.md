@@ -16,7 +16,6 @@
 - **Database**: MongoDB
 - **Machine Learning**: Ollama (OCR), Segment Anything by Meta (SAM)
 - **APIs**: Google Maps/Satellite imagery providers
-- **DevOps**: Docker & Docker Compose
 
 ## 📂 Project Structure
 ```bash
@@ -84,7 +83,6 @@
     conda env create -f requirements.yaml
     conda activate solar-rooftop
     ```
-   ```
 
 3. **Run the server**:
    ```bash
